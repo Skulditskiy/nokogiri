@@ -1,5 +1,7 @@
 <?php
 
+namespace Nokogiri;
+
 /*
  * This file is part of the zero package.
  * Copyright (c) 2012 olamedia <olamedia@gmail.com>
@@ -15,26 +17,26 @@
  *
  * @author olamedia <olamedia@gmail.com>
  */
-class nokogiri implements IteratorAggregate{
+class Parser implements \IteratorAggregate{
 	const
 	regexp = 
 	"/(?P<tag>[a-z0-9]+)?(\[(?P<attr>\S+)(=(?P<value>[^\]]+))?\])?(#(?P<id>[^\s:>#\.]+))?(\.(?P<class>[^\s:>#\.]+))?(:(?P<pseudo>(first|last|nth)-child)(\((?P<expr>[^\)]+)\))?)?\s*(?P<rel>>)?/isS"
 	;
 	protected $_source = '';
 	/**
-	 * @var DOMDocument
+	 * @var \DOMDocument
 	 */
 	protected $_dom = null;
 	/**
-	 * @var DOMDocument
+	 * @var \DOMDocument
 	 */
 	protected $_tempDom = null;
 	/**
-	 * @var DOMXpath
+	 * @var \DOMXPath
 	 * */
 	protected $_xpath = null;
 	/**
- 	 * @var libxmlErrors
+ 	 * @var array
  	 */
 	protected $_libxmlErrors = null;
 	protected static $_compiledXpath = array();
@@ -92,7 +94,7 @@ class nokogiri implements IteratorAggregate{
 		$this->loadDom($dom);
 	}
 	public function loadHtml($htmlString = ''){
-		$dom = new DOMDocument('1.0', 'UTF-8');
+		$dom = new \DOMDocument('1.0', 'UTF-8');
 		$dom->preserveWhiteSpace = false;
 		if (strlen($htmlString)){
 			libxml_use_internal_errors(true);
@@ -119,14 +121,14 @@ class nokogiri implements IteratorAggregate{
 		if ($asIs){
 			return $this->_dom;
 		}
-		if ($this->_dom instanceof DOMDocument){
+		if ($this->_dom instanceof \DOMDocument){
 			return $this->_dom;
-		}elseif ($this->_dom instanceof DOMNodeList || $this->_dom instanceof DOMElement){
+		} elseif ($this->_dom instanceof \DOMNodeList || $this->_dom instanceof \DOMElement){
 			if ($this->_tempDom === null){
-				$this->_tempDom = new DOMDocument('1.0', 'UTF-8');
+				$this->_tempDom = new \DOMDocument('1.0', 'UTF-8');
 				$root = $this->_tempDom->createElement('root');
 				$this->_tempDom->appendChild($root);
-				if($this->_dom instanceof DOMNodeList){
+				if($this->_dom instanceof \DOMNodeList){
 					foreach ($this->_dom as $domElement){
 						$domNode = $this->_tempDom->importNode($domElement, true);
 						$root->appendChild($domNode);
@@ -141,7 +143,7 @@ class nokogiri implements IteratorAggregate{
 	}
 	protected function getXpath(){
 		if ($this->_xpath === null){
-			$this->_xpath = new DOMXpath($this->getDom());
+			$this->_xpath = new \DOMXPath($this->getDom());
 		}
 		return $this->_xpath;
 	}
@@ -213,7 +215,7 @@ class nokogiri implements IteratorAggregate{
 		if (strlen($xpathQuery)){
 			$nodeList = $this->getXpath()->query($xpathQuery);
 			if ($nodeList === false){
-				throw new Exception('Malformed xpath');
+				throw new \Exception('Malformed xpath');
 			}
 			return self::fromDom($nodeList);
 		}
@@ -227,7 +229,7 @@ class nokogiri implements IteratorAggregate{
 	public function toArray($xnode = null){
 		$array = array();
 		if ($xnode === null){
-			if ($this->_dom instanceof DOMNodeList){
+			if ($this->_dom instanceof \DOMNodeList){
 				foreach ($this->_dom as $node){
 					$array[] = $this->toArray($node);
 				}
@@ -258,14 +260,14 @@ class nokogiri implements IteratorAggregate{
 	}
 	public function getIterator(){
 		$a = $this->toArray();
-		return new ArrayIterator($a);
+		return new \ArrayIterator($a);
 	}
 	protected function _toTextArray($node = null, $skipChildren = false, $singleLevel = true){
 		$array = array();
 		if ($node === null){
 			$node = $this->getDom();
 		}
-		if ($node instanceof DOMNodeList){
+		if ($node instanceof \DOMNodeList){
 			foreach ($node as $child){
 				if ($singleLevel){
 					$array = array_merge($array, $this->_toTextArray($child, $skipChildren, $singleLevel));

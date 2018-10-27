@@ -11,12 +11,21 @@
             "email": "olamedia@gmail.com",
             "homepage": "http://github.com/olamedia",
             "role": "Developer"
+        },
+        {
+            "name": "Yevgeniy Skulditskiy",
+            "email": "skulditsky@gmail.com"
         }
     ],
     "require": {
         "php": ">=5.0.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^6"
+    },
     "autoload": {
-        "classmap": ["nokogiri.php"]
+        "psr-4": {
+            "Nokogiri\\": "src/"
+        }
     }
 }
