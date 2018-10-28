@@ -14,7 +14,8 @@ Basic usage<br />Примеры использования
 <?php
 $html = gzdecode(file_get_contents('http://habrahabr.ru/'));
 
-$saw = new nokogiri($html);
+$saw = new Nokogiri\Parser();
+$saw->loadHtml($saw);
 var_dump($saw->get('a.habracut')->toArray());
 var_dump($saw->get('ul.panel-nav-top li.current')->toArray());
 var_dump($saw->get('#sidebar dl.air-comment a.topic')->toArray());
@@ -26,15 +27,10 @@ foreach ($saw->get('#sidebar a.topic') as $link){
 ```
 
 HTML errors will be ignored.
-Creating from HTML string: `nokogiri::fromHtml($htmlString)` or `new nokogiri($htmlString)`
+Creating from HTML string: `nokogiri::fromHtml($htmlString)`
 Creating from DomDocument: `nokogiri::fromDom($dom)`
 
-Ошибки html игнорируются.
-Создание из строки HTML: nokogiri::fromHtml($htmlString); или new nokogiri($htmlString);
-Создание из DomDocument: nokogiri::fromDom($dom);
-
-
-Implemented css selectors<br />Реализованные селекторы
+Implemented css selectors
 =========================
 * tag
 * .class
@@ -47,12 +43,6 @@ Implemented css selectors<br />Реализованные селекторы
 * :nth-child(an+b)
 * :nth-child(even/odd)
 
-
-Requirements<br />Требования
-============
-DOM
-libxml
-PHP
 
 Links<br />Ссылки
 ============
