@@ -55,16 +55,6 @@ class Parser implements \IteratorAggregate{
 		return $regexp;
 	}
 
-	public static function fromHtml($htmlString) {
-		$me = new self();
-		$me->loadHtml($htmlString);
-		return $me;
-	}
-	public static function fromHtmlNoCharset($htmlString) {
-		$me = new self();
-		$me->loadHtmlNoCharset($htmlString);
-		return $me;
-	}
 	public static function fromDom($dom) {
 		$me = new self();
 		$me->loadDom($dom);
