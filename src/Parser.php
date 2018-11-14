@@ -36,24 +36,8 @@ class Parser implements \IteratorAggregate{
  	 * @var array
  	 */
 	protected $_libxmlErrors = null;
-	protected static $_compiledXpath = array();
 
-    /**
-     * @todo most probably not in use
-     * @return string
-     */
-	public function getRegexp() {
-		$tag = "(?P<tag>[a-z0-9]+)?";
-		$attr = "(\[(?P<attr>\S+)=(?P<value>[^\]]+)\])?";
-		$id = "(#(?P<id>[^\s:>#\.]+))?";
-		$class = "(\.(?P<class>[^\s:>#\.]+))?";
-		$child = "(first|last|nth)-child";
-		$expr = "(\((?P<expr>[^\)]+)\))";
-		$pseudo = "(:(?P<pseudo>".$child.")".$expr."?)?";
-		$rel = "\s*(?P<rel>>)?";
-		$regexp = '/' . $tag . $attr . $id . $class . $pseudo . $rel . '/isS';
-		return $regexp;
-	}
+	protected static $_compiledXpath = [];
 
 	public static function fromDom($dom) {
 		$me = new self();
@@ -62,26 +46,6 @@ class Parser implements \IteratorAggregate{
 	}
 	public function loadDom($dom) {
 		$this->_dom = $dom;
-	}
-	public function loadHtmlNoCharset($htmlString = '') {
-		$dom = new \DOMDocument('1.0', 'UTF-8');
-		$dom->preserveWhiteSpace = false;
-		if (strlen($htmlString)){
-			libxml_use_internal_errors(true);
-			$this->_libxmlErrors = null;
-			$dom->loadHTML('<?xml encoding="UTF-8">'.$htmlString);
-			// dirty fix
-			foreach ($dom->childNodes as $item){
-			    if ($item->nodeType === XML_PI_NODE){
-			        $dom->removeChild($item); // remove hack
-			        break;
-			    }
-			}
-			$dom->encoding = 'UTF-8'; // insert proper
-			$this->_libxmlErrors = libxml_get_errors();
-			libxml_clear_errors();
-		}
-		$this->loadDom($dom);
 	}
 	public function loadHtml($htmlString = '') {
 		$dom = new \DOMDocument('1.0', 'UTF-8');
@@ -105,12 +69,6 @@ class Parser implements \IteratorAggregate{
 		return $this->getElements($this->getXpathSubquery($expression, false, $compile));
 	}
 
-    /**
-     * @todo most probably not in use
-     */
-	protected function getNodes() {
-
-	}
 	public function getDom($asIs = false) {
 		if ($asIs){
 			return $this->_dom;
@@ -135,12 +93,14 @@ class Parser implements \IteratorAggregate{
 			return $this->_tempDom;
 		}
 	}
+
 	protected function getXpath() {
 		if ($this->_xpath === null){
 			$this->_xpath = new \DOMXPath($this->getDom());
 		}
 		return $this->_xpath;
 	}
+
 	public function getXpathSubquery($expression, $rel = false, $compile = true) {
 		if ($compile){
 			$key = $expression.($rel?'>':'*');
@@ -221,7 +181,7 @@ class Parser implements \IteratorAggregate{
 		return $this->getDom()->saveXML();
 	}
 	public function toArray($xnode = null) {
-		$array = array();
+		$array = [];
 		if ($xnode === null){
 			if ($this->_dom instanceof \DOMNodeList){
 				foreach ($this->_dom as $node){
@@ -272,7 +232,7 @@ class Parser implements \IteratorAggregate{
 			return $array;
 		}
 		if (XML_TEXT_NODE === $node->nodeType){
-			return array($node->nodeValue);
+			return [$node->nodeValue];
 		}
 		if (!$skipChildren){
 			if ($node->hasChildNodes()){
