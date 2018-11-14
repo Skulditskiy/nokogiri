@@ -1,21 +1,17 @@
-HTML parser
+PHP parser of invalid HTML
 ===========
-Данная библиотека - это быстрый парсер html кода, который способен работать с невалидным кодом.<br />
-На вход необходимо подавать документ в кодировке UTF-8 или DomDocument.<br />
-Для поиска элементов используются css-селекторы, которые преобразуются внутри в xpath выражение.<br />
-Полученное xpath выражение кешируется, если в методе get не был выставлен в false второй аргумент (стоит отключать кеширование только в случае динамической генерации css выражений).<br />
-В возвращаемых через ->toArray() массивах находятся аттрибуты, текст под ключом #text и вложенные элементы под числовыми ключами.<br />
-Альтернативные методы: ->toXml() возвращает HTML-строку, ->getDom() возвращает DOMDocument<br />
+This library is quick parser of HTML code and it can work with invalid markup.
 
+Ofter problem with parsing websites with PHP is that simplexml_load_string and other methods can not work with even slightly corrupted HTML code.
 
-Basic usage
+Example usage
 ===================================
 ```php
 <?php
-$html = gzdecode(file_get_contents('http://habrahabr.ru/'));
+$html = file_get_contents('https://whatever-domain.com/');
 
 $saw = new Nokogiri\Parser();
-$saw->loadHtml($saw);
+$saw->loadHtml($html);
 var_dump($saw->get('a.habracut')->toArray());
 var_dump($saw->get('ul.panel-nav-top li.current')->toArray());
 var_dump($saw->get('#sidebar dl.air-comment a.topic')->toArray());
@@ -26,11 +22,11 @@ foreach ($saw->get('#sidebar a.topic') as $link){
 }
 ```
 
-HTML errors will be ignored.
-Creating from HTML string: `nokogiri::fromHtml($htmlString)`
-Creating from DomDocument: `nokogiri::fromDom($dom)`
+HTML errors will be ignored.<br>
+Creating from HTML string: `\Nokogiri\Parser::fromHtml($htmlString)`<br>
+Creating from DomDocument: `\Nokogiri\Parser::fromDom($dom)`<br>
 
-Implemented css selectors
+Implemented CSS selectors
 =========================
 * tag
 * .class
@@ -43,10 +39,3 @@ Implemented css selectors
 * :nth-child(an+b)
 * :nth-child(even/odd)
 
-
-Links<br />Ссылки
-============
-Статьи на хабре:
-
-* <a href="http://habrahabr.ru/blogs/php/110112/">Нокогири: парсинг HTML в одну строку</a>
-* <a href="http://habrahabr.ru/blogs/php/114323/">Сравнение библиотек для парсинга</a>
