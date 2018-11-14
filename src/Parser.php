@@ -17,8 +17,10 @@ namespace Nokogiri;
  *
  * @author olamedia <olamedia@gmail.com>
  */
-class Parser implements \IteratorAggregate{
+class Parser implements \IteratorAggregate
+{
 	const regexp = "/(?P<tag>[a-z0-9]+)?(\[(?P<attr>\S+)(=(?P<value>[^\]]+))?\])?(#(?P<id>[^\s:>#\.]+))?(\.(?P<class>[^\s:>#\.]+))?(:(?P<pseudo>(first|last|nth)-child)(\((?P<expr>[^\)]+)\))?)?\s*(?P<rel>>)?/isS";
+
 	protected $_source = '';
 	/**
 	 * @var \DOMDocument
@@ -37,16 +39,16 @@ class Parser implements \IteratorAggregate{
  	 */
 	protected $_libxmlErrors = null;
 
-	protected static $_compiledXpath = [];
-
 	public static function fromDom($dom) {
 		$me = new self();
 		$me->loadDom($dom);
 		return $me;
 	}
+
 	public function loadDom($dom) {
 		$this->_dom = $dom;
 	}
+
 	public function loadHtml($htmlString = '') {
 		$dom = new \DOMDocument('1.0', 'UTF-8');
 		$dom->preserveWhiteSpace = false;
@@ -59,14 +61,13 @@ class Parser implements \IteratorAggregate{
 		}
 		$this->loadDom($dom);
 	}
+
 	public function getErrors() {
  		return $this->_libxmlErrors;
  	}
-	public function __invoke($expression) {
-		return $this->get($expression);
-	}
-	public function get($expression, $compile = true) {
-		return $this->getElements($this->getXpathSubquery($expression, false, $compile));
+
+	public function get($expression) {
+		return $this->getElements($this->getXpathSubquery($expression, false));
 	}
 
 	public function getDom($asIs = false) {
@@ -95,26 +96,20 @@ class Parser implements \IteratorAggregate{
 	}
 
 	protected function getXpath() {
-		if ($this->_xpath === null){
+		if ($this->_xpath === null) {
 			$this->_xpath = new \DOMXPath($this->getDom());
 		}
 		return $this->_xpath;
 	}
 
-	public function getXpathSubquery($expression, $rel = false, $compile = true) {
-		if ($compile){
-			$key = $expression.($rel?'>':'*');
-			if (isset(self::$_compiledXpath[$key])){
-				return self::$_compiledXpath[$key];
-			}
-		}
+	public function getXpathSubquery($expression, $rel = false) {
 		$query = '';
-		if (preg_match(self::regexp, $expression, $subs)){
-			$brackets = array();
-			if (isset($subs['id']) && '' !== $subs['id']){
+		if (preg_match(self::regexp, $expression, $subs)) {
+			$brackets = [];
+			if (isset($subs['id']) && '' !== $subs['id']) {
 				$brackets[] = "@id='".$subs['id']."'";
 			}
-			if (isset($subs['attr']) && '' !== $subs['attr']){
+			if (isset($subs['attr']) && '' !== $subs['attr']) {
 				if (!(isset($subs['value']))) {
 					$brackets[] = "@".$subs['attr'];
 				} else {
@@ -122,24 +117,24 @@ class Parser implements \IteratorAggregate{
 					$brackets[] = "@".$subs['attr']."='".$attrValue."'";
 				}
 			}
-			if (isset($subs['class']) && '' !== $subs['class']){
+			if (isset($subs['class']) && '' !== $subs['class']) {
 				$brackets[] = 'contains(concat(" ", normalize-space(@class), " "), " '.$subs['class'].' ")';
 			}
-			if (isset($subs['pseudo']) && '' !== $subs['pseudo']){
-				if ('first-child' === $subs['pseudo']){
+			if (isset($subs['pseudo']) && '' !== $subs['pseudo']) {
+				if ('first-child' === $subs['pseudo']) {
 					$brackets[] = '1';
-				}elseif ('last-child' === $subs['pseudo']){
+				} elseif ('last-child' === $subs['pseudo']) {
 					$brackets[] = 'last()';
-				}elseif ('nth-child' === $subs['pseudo']){
-					if (isset($subs['expr']) && '' !== $subs['expr']){
+				} elseif ('nth-child' === $subs['pseudo']) {
+					if (isset($subs['expr']) && '' !== $subs['expr']) {
 						$e = $subs['expr'];
-						if('odd' === $e){
+						if ('odd' === $e) {
 							$brackets[] = '(position() -1) mod 2 = 0 and position() >= 1';
-						}elseif('even' === $e){
+						} elseif('even' === $e){
 							$brackets[] = 'position() mod 2 = 0 and position() >= 0';
-						}elseif(preg_match("/^[0-9]+$/", $e)){
+						} elseif(preg_match("/^[0-9]+$/", $e)){
 							$brackets[] = 'position() = '.$e;
-						}elseif(preg_match("/^((?P<mul>[0-9]+)n\+)(?P<pos>[0-9]+)$/is", $e, $esubs)){
+						} elseif(preg_match("/^((?P<mul>[0-9]+)n\+)(?P<pos>[0-9]+)$/is", $e, $esubs)) {
 							if (isset($esubs['mul'])){
 								$brackets[] = '(position() -'.$esubs['pos'].') mod '.$esubs['mul'].' = 0 and position() >= '.$esubs['pos'].'';
 							}else{
@@ -157,89 +152,100 @@ class Parser implements \IteratorAggregate{
 				;
 			$left = trim(substr($expression, strlen($subs[0])));
 			if ('' !== $left){
-				$query .= $this->getXpathSubquery($left, isset($subs['rel'])?'>'===$subs['rel']:false, $compile);
+				$query .= $this->getXpathSubquery($left, isset($subs['rel'])?'>'===$subs['rel']:false);
 			}
-		}
-		if ($compile){
-			self::$_compiledXpath[$key] = $query;
 		}
 		return $query;
 	}
-	protected function getElements($xpathQuery) {
-		if (strlen($xpathQuery)){
-			$nodeList = $this->getXpath()->query($xpathQuery);
-			if ($nodeList === false){
-				throw new \Exception('Malformed xpath');
-			}
-			return self::fromDom($nodeList);
-		}
-	}
+
 	public function toDom($asIs = false) {
 		return $this->getDom($asIs);
 	}
+
 	public function toXml() {
 		return $this->getDom()->saveXML();
 	}
+
 	public function toArray($xnode = null) {
 		$array = [];
 		if ($xnode === null){
-			if ($this->_dom instanceof \DOMNodeList){
+			if ($this->_dom instanceof \DOMNodeList) {
 				foreach ($this->_dom as $node){
 					$array[] = $this->toArray($node);
 				}
 				return $array;
 			}
 			$node = $this->getDom();
-		}else{
+		} else {
 			$node = $xnode;
 		}
-		if (\in_array($node->nodeType, [XML_TEXT_NODE,XML_COMMENT_NODE])){
+		if (\in_array($node->nodeType, [XML_TEXT_NODE, XML_COMMENT_NODE])) {
 			return $node->nodeValue;
 		}
-		if ($node->hasAttributes()){
+		if ($node->hasAttributes()) {
 			foreach ($node->attributes as $attr){
 				$array[$attr->nodeName] = $attr->nodeValue;
 			}
 		}
-		if ($node->hasChildNodes()){
-			foreach ($node->childNodes as $childNode){
+		if ($node->hasChildNodes()) {
+			foreach ($node->childNodes as $childNode) {
 				$array[$childNode->nodeName][] = $this->toArray($childNode);
 			}
 		}
-		if ($xnode === null){
+		if ($xnode === null) {
 			$a = reset($array);
 			return reset($a); // first child
 		}
 		return $array;
 	}
+
 	public function getIterator() {
 		$a = $this->toArray();
 		return new \ArrayIterator($a);
 	}
+
+    public function toTextArray($skipChildren = false, $singleLevel = true) {
+        return $this->_toTextArray($this->_dom, $skipChildren, $singleLevel);
+    }
+
+    public function toText($glue = ' ', $skipChildren = false) {
+        return implode($glue, $this->toTextArray($skipChildren, true));
+    }
+
+    protected function getElements($xpathQuery) {
+        if (strlen($xpathQuery)){
+            $nodeList = $this->getXpath()->query($xpathQuery);
+            if ($nodeList === false){
+                throw new \Exception('Malformed xpath');
+            }
+            return self::fromDom($nodeList);
+        }
+    }
+
 	protected function _toTextArray($node = null, $skipChildren = false, $singleLevel = true) {
-		$array = array();
-		if ($node === null){
+		$array = [];
+		if ($node === null) {
 			$node = $this->getDom();
 		}
-		if ($node instanceof \DOMNodeList){
-			foreach ($node as $child){
-				if ($singleLevel){
+		if ($node instanceof \DOMNodeList) {
+			foreach ($node as $child) {
+				if ($singleLevel) {
 					$array = array_merge($array, $this->_toTextArray($child, $skipChildren, $singleLevel));
-				}else{
+				} else {
 					$array[] = $this->_toTextArray($child, $skipChildren, $singleLevel);
 				}
 			}
 			return $array;
 		}
-		if (XML_TEXT_NODE === $node->nodeType){
+		if (XML_TEXT_NODE === $node->nodeType) {
 			return [$node->nodeValue];
 		}
-		if (!$skipChildren){
-			if ($node->hasChildNodes()){
+		if (!$skipChildren) {
+			if ($node->hasChildNodes()) {
 				foreach ($node->childNodes as $childNode){
-					if ($singleLevel){
+					if ($singleLevel) {
 						$array = array_merge($array, $this->_toTextArray($childNode, $skipChildren, $singleLevel));
-					}else{
+					} else {
 						$array[] = $this->_toTextArray($childNode, $skipChildren, $singleLevel);
 					}
 				}
@@ -247,10 +253,5 @@ class Parser implements \IteratorAggregate{
 		}
 		return $array;
 	}
-	public function toTextArray($skipChildren = false, $singleLevel = true) {
-		return $this->_toTextArray($this->_dom, $skipChildren, $singleLevel);
-	}
-	public function toText($glue = ' ', $skipChildren = false) {
-		return implode($glue, $this->toTextArray($skipChildren, true));
-	}
+
 }
